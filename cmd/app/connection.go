@@ -1,28 +1,42 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net"
-	"os"
+
+	redis_protocol "github.com/ostojics/redis-go/internal"
 )
 
 func handleConnection(conn net.Conn) {
 	defer conn.Close()
-	buf := make([]byte, 1024)
+
+	reader := bufio.NewReader(conn)
 
 	for {
-		req, err := conn.Read(buf)
-		fmt.Println("Received: ", string(buf[:req]))
-
+		value, err := redis_protocol.DecodeRESP(bufio.NewReader(reader))
 		if err != nil {
-			fmt.Println("Error reading from connection: ", err.Error())
-			os.Exit(1)
+			if err == io.EOF {
+				fmt.Printf("Connection closed by client at address %s \n", conn.RemoteAddr().String())
+				break
+			}
+
+			fmt.Println("Error decoding from connection: ", err.Error())
+			return
 		}
 
-		_, err = conn.Write([]byte("+PONG\r\n"))
-		if err != nil {
-			fmt.Println("Error writing to connection: ", err.Error())
-			os.Exit(1)
+		command := value.Array()[0].String()
+		args := value.Array()[1:]
+
+		switch command {
+		case "PING":
+			conn.Write([]byte("+PONG\r\n"))
+		case "ECHO":
+			conn.Write([]byte(fmt.Sprintf("%s\r\n", args[0].String())))
+		default:
+			conn.Write([]byte("-ERR unknown command\r\n"))
 		}
+
 	}
 }
