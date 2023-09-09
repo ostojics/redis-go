@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+
+	"github.com/ostojics/redis-go/internal/storage"
 )
 
 func main() {
@@ -14,6 +16,8 @@ func main() {
 	}
 	fmt.Println("Listening on port 5000")
 
+	storage := storage.NewStorage()
+
 	for {
 		conn, err := l.Accept()
 		if err != nil {
@@ -21,6 +25,6 @@ func main() {
 			os.Exit(1)
 		}
 
-		go handleConnection(conn)
+		go handleConnection(conn, storage)
 	}
 }

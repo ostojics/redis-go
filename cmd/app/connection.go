@@ -6,10 +6,11 @@ import (
 	"io"
 	"net"
 
-	redis_protocol "github.com/ostojics/redis-go/internal"
+	redis_protocol "github.com/ostojics/redis-go/internal/protocol"
+	"github.com/ostojics/redis-go/internal/storage"
 )
 
-func handleConnection(conn net.Conn) {
+func handleConnection(conn net.Conn, storage *storage.Storage) {
 	defer conn.Close()
 
 	reader := bufio.NewReader(conn)
@@ -34,6 +35,23 @@ func handleConnection(conn net.Conn) {
 			conn.Write([]byte("+PONG\r\n"))
 		case "ECHO":
 			conn.Write([]byte(fmt.Sprintf("%s\r\n", args[0].String())))
+		case "SET":
+			if len(args) != 2 {
+				conn.Write([]byte("-ERR wrong number of arguments for 'SET' command\r\n"))
+				return
+			}
+
+			storage.Set(args[0].String(), args[1].String())
+			conn.Write([]byte("+OK\r\n"))
+		case "GET":
+			value, found := storage.Get(args[0].String())
+
+			if !found {
+				conn.Write([]byte("-ERR failed to find item\r\n"))
+				return
+			}
+
+			conn.Write([]byte(fmt.Sprintf("%s\r\n", value)))
 		default:
 			conn.Write([]byte("-ERR unknown command\r\n"))
 		}
