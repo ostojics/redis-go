@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strconv"
+	"time"
 
 	redis_protocol "github.com/ostojics/redis-go/internal/protocol"
 	"github.com/ostojics/redis-go/internal/storage"
@@ -36,9 +38,27 @@ func handleConnection(conn net.Conn, storage *storage.Storage) {
 		case "ECHO":
 			conn.Write([]byte(fmt.Sprintf("%s\r\n", args[0].String())))
 		case "SET":
-			if len(args) != 2 {
+			if len(args) < 2 {
 				conn.Write([]byte("-ERR wrong number of arguments for 'SET' command\r\n"))
 				return
+			}
+
+			if len(args) > 2 {
+				if args[2].String() == "px" {
+					expiryStr := args[3].String()
+					expiryInMilliseconds, err := strconv.Atoi(expiryStr)
+					if err != nil {
+						conn.Write([]byte(fmt.Sprintf("-ERR PX value (%s) is not an integer\r\n", expiryStr)))
+						break
+					}
+
+					storage.SetWithExpiry(args[0].String(), args[1].String(), time.Duration(expiryInMilliseconds)*time.Millisecond)
+					conn.Write([]byte("+OK\r\n"))
+					return
+				} else {
+					conn.Write([]byte("-ERR unknown option for set command\r\n"))
+					return
+				}
 			}
 
 			storage.Set(args[0].String(), args[1].String())
@@ -47,7 +67,7 @@ func handleConnection(conn net.Conn, storage *storage.Storage) {
 			value, found := storage.Get(args[0].String())
 
 			if !found {
-				conn.Write([]byte("-ERR failed to find item\r\n"))
+				conn.Write([]byte("_\r\n"))
 				return
 			}
 
