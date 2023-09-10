@@ -1,4 +1,5 @@
 import socket
+import argparse
 
 def send_resp_command(sock, command_parts):
     command = command_parts[0]
@@ -19,13 +20,17 @@ def send_resp_command(sock, command_parts):
 
         sock.send(resp_command.encode())
         response = sock.recv(1024).decode()
-        print("Server response:", response.strip())
+        print(response.strip())
     except Exception as e:
         print("Error:", str(e))
 
 def main():
-    server_address = ('localhost', 5000)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-port", "--port", help="Network port number",  type=int)
+    args = parser.parse_args()
+    port = args.port if args.port is not None else 5000
 
+    server_address = ('localhost', port) 
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
