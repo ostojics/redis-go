@@ -44,7 +44,7 @@ func handleConnection(conn net.Conn, storage *storage.Storage) {
 			}
 
 			if len(args) > 2 {
-				if args[2].String() == "px" {
+				if args[2].String() == "PX" {
 					expiryStr := args[3].String()
 					expiryInMilliseconds, err := strconv.Atoi(expiryStr)
 					if err != nil {
