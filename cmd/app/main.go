@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net"
 	"os"
@@ -9,12 +10,15 @@ import (
 )
 
 func main() {
-	l, err := net.Listen("tcp", fmt.Sprintf("%s", ":5000"))
+	port := flag.String("port", ":5000", "network port")
+	flag.Parse()
+
+	l, err := net.Listen("tcp", *port)
 	if err != nil {
-		fmt.Println("Failed to bind to port 5000")
+		fmt.Printf("Failed to bind to port %s", *port)
 		os.Exit(1)
 	}
-	fmt.Println("Listening on port 5000")
+	fmt.Printf("Listening on port %s \n", *port)
 
 	storage := storage.NewStorage()
 
