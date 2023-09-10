@@ -36,6 +36,11 @@ func handleConnection(conn net.Conn, storage *storage.Storage) {
 		case "PING":
 			conn.Write([]byte("+PONG\r\n"))
 		case "ECHO":
+			if len(args) < 1 {
+				conn.Write([]byte("-ERR wrong number of arguments for 'ECHO' command\r\n"))
+				return
+			}
+
 			conn.Write([]byte(fmt.Sprintf("%s\r\n", args[0].String())))
 		case "SET":
 			if len(args) < 2 {
