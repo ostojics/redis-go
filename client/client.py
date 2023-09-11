@@ -1,26 +1,27 @@
 import socket
 import argparse
+from commands import *
 
 def send_resp_command(sock, command_parts):
     command = command_parts[0]
 
     try:
         if command == 'PING':
-            resp_command = f'*1\r\n$4\r\nPING\r\n'
+            resp_command = make_ping_command()
         elif command == 'ECHO':
             arg = command_parts[1]
-            resp_command = f'*2\r\n${len(command)}\r\n{command}\r\n${len(arg)}\r\n{arg}\r\n'
+            resp_command = make_echo_command(arg)
         elif command == 'SET':
             key = command_parts[1]
             value = command_parts[2]
-            resp_command = f'*3\r\n$3\r\nSET\r\n${len(key)}\r\n{key}\r\n${len(value)}\r\n{value}\r\n'
+            resp_command = make_set_command(key, value)
         elif command == 'GET':
             key = command_parts[1]
-            resp_command = f'*2\r\n$3\r\nGET\r\n${len(key)}\r\n{key}\r\n'
+            resp_command = make_get_command(key)
 
         sock.send(resp_command.encode())
         response = sock.recv(1024).decode()
-        print(response.strip())
+        print(response.strip() + "\n")
     except Exception as e:
         print("Error:", str(e))
 
@@ -37,7 +38,7 @@ def main():
         client_socket.connect(server_address)
 
         while True:
-            user_input = input("Enter a command (e.g., PING, SET key value, GET key, ECHO message, or exit): ")
+            user_input = input("Enter a command \n PING\n SET key value \n GET key \n ECHO message \n exit: ")
 
             if user_input.lower() == 'exit':
                 break
